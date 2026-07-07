@@ -195,6 +195,7 @@ table { border-collapse: collapse; width: 100%; }
   font-size: 20px;
   box-shadow: var(--sh-1);
 }
+.app-header__mark svg { width: 23px; height: 23px; display: block; }
 .app-header__titles { display: flex; flex-direction: column; line-height: 1.25; }
 .app-header__name { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
 .app-header__sub { font-size: 12.5px; color: var(--ink-mute); }
