@@ -485,7 +485,7 @@ table { border-collapse: collapse; width: 100%; }
 .resv-card__work { font-size: 13px; color: var(--ink-mute); }
 .resv-card__meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .resv-card__body { display: flex; flex-direction: column; gap: 4px; }
-.resv-card__action { margin-top: 4px; }
+.resv-card__action { margin-top: 4px; display: flex; gap: 6px; }
 
 /* 重複(バッティング)警告 */
 .resv-card--conflict {
@@ -861,15 +861,50 @@ table { border-collapse: collapse; width: 100%; }
 .adm-sched__date { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--ink-faint); }
 .adm-sched__item {
   display: flex;
-  gap: 10px;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
   padding: 8px;
   border-radius: var(--r-sm);
-  cursor: pointer;
   transition: background .12s ease;
 }
 .adm-sched__item:hover { background: var(--bg-sunken); }
-.adm-sched__item:focus-visible { outline: none; box-shadow: var(--sh-focus); }
+.adm-sched__top { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.adm-sched__acts { display: flex; gap: 6px; }
+.adm-sched__done {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-mute);
+  background: var(--bg-sunken);
+  padding: 2px 10px;
+  border-radius: var(--r-pill);
+}
+.adm-mini-btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 7px;
+  background: var(--bg-sunken);
+  color: var(--ink-2);
+  transition: background .12s ease;
+}
+.adm-mini-btn:hover { background: #e2e2e6; }
+.adm-mini-btn--primary { background: var(--blue); color: #fff; }
+.adm-mini-btn--primary:hover { background: var(--blue-hover); }
+
+/* サイドバーの売上（当日・当月） */
+.adm-sside-sales {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-sm);
+}
+.adm-sside-sales__title { font-size: 11px; font-weight: 700; color: var(--ink-faint); margin-bottom: 6px; }
+.adm-sside-sales__row { display: flex; align-items: baseline; justify-content: space-between; padding: 2px 0; }
+.adm-sside-sales__lab { font-size: 12px; color: var(--ink-mute); }
+.adm-sside-sales__num { font-size: 14px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 .adm-sched__time {
   font-size: 13px;
   font-weight: 700;

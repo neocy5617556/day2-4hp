@@ -106,11 +106,12 @@
           '</div>' +
         '</form>';
     }
-    // 確定済み(未完了): 完了ボタン。
+    // 確定済み(未完了): 完了 / キャンセル ボタン。
     if (r.status === 'confirmed') {
+      var id = Utils.escapeHtml(r.id);
       return '<div class="resv-card__action">' +
-          '<button type="button" class="adm-btn adm-btn--sm" data-complete="' +
-            Utils.escapeHtml(r.id) + '">完了にする</button>' +
+          '<button type="button" class="adm-btn adm-btn--primary adm-btn--sm" data-complete="' + id + '">完了</button>' +
+          '<button type="button" class="adm-btn adm-btn--sm" data-cancel-resv="' + id + '">キャンセル</button>' +
         '</div>';
     }
     return '';
@@ -236,6 +237,8 @@
       if (openBtn) { openComplete(openBtn.getAttribute('data-complete')); return; }
       var cancel = t && t.closest ? t.closest('[data-complete-cancel]') : null;
       if (cancel) { completingId = null; render(); return; }
+      var cancelResv = t && t.closest ? t.closest('[data-cancel-resv]') : null;
+      if (cancelResv) { cancelReservation(cancelResv.getAttribute('data-cancel-resv')); return; }
     });
     listWrap.addEventListener('submit', function (e) {
       var form = e.target && e.target.closest ? e.target.closest('[data-complete-form]') : null;
@@ -254,6 +257,23 @@
   function openComplete(id) {
     completingId = id;
     render();
+  }
+
+  // 外部（サイドバー等）から完了フォームを開く: 予約管理へ遷移してから開く。
+  function startComplete(id) {
+    completingId = id;
+    if (window.AdminUI && typeof AdminUI.go === 'function') AdminUI.go('reservations');
+    else render();
+  }
+
+  // 予約をキャンセル（削除）する。確認ダイアログの後に反映。
+  function cancelReservation(id) {
+    if (typeof window.confirm === 'function' && !window.confirm('この予約をキャンセルしますか？')) return;
+    var App = window.App;
+    var list = (App.state && App.state.reservations) || [];
+    App.state.reservations = list.filter(function (x) { return x.id !== id; });
+    if (completingId === id) completingId = null;
+    App.save(); // 保存＋全再描画。
   }
 
   // 完了 = 作業に金額を紐付けて売上として記録する。
@@ -419,5 +439,9 @@
     mount.appendChild(section);
   }
 
-  window.AdminReservations = { render: render };
+  window.AdminReservations = {
+    render: render,
+    startComplete: startComplete,
+    cancelReservation: cancelReservation
+  };
 })();

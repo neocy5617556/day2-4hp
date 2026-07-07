@@ -105,7 +105,7 @@
     return list;
   }
 
-  // 当日スケジュールのHTML
+  // 当日スケジュールのHTML（各予約に 完了 / キャンセル を付ける）
   function scheduleHtml() {
     var Utils = window.Utils;
     var list = todaysReservations();
@@ -118,13 +118,24 @@
       body = '';
       for (var i = 0; i < list.length; i++) {
         var r = list[i];
+        var id = Utils.escapeHtml(r.id);
+        // 完了済みは「完了」チップ、未完了は 完了 / キャンセル ボタン。
+        var acts = (r.status === 'completed')
+          ? '<span class="adm-sched__done">完了</span>'
+          : '<div class="adm-sched__acts">' +
+              '<button type="button" class="adm-mini-btn adm-mini-btn--primary" data-sched-complete="' + id + '">完了</button>' +
+              '<button type="button" class="adm-mini-btn" data-sched-cancel="' + id + '">キャンセル</button>' +
+            '</div>';
         body +=
-          '<div class="adm-sched__item" role="button" tabindex="0" data-goto="reservations">' +
-            '<span class="adm-sched__time">' + Utils.escapeHtml(r.time || '--:--') + '</span>' +
-            '<span class="adm-sched__body">' +
-              '<span class="adm-sched__name">' + Utils.escapeHtml(customerName(r.customerId)) + '</span>' +
-              '<span class="adm-sched__work">' + Utils.escapeHtml(r.workType || '') + '</span>' +
-            '</span>' +
+          '<div class="adm-sched__item" data-resv="' + id + '">' +
+            '<div class="adm-sched__top">' +
+              '<span class="adm-sched__time">' + Utils.escapeHtml(r.time || '--:--') + '</span>' +
+              '<span class="adm-sched__body">' +
+                '<span class="adm-sched__name">' + Utils.escapeHtml(customerName(r.customerId)) + '</span>' +
+                '<span class="adm-sched__work">' + Utils.escapeHtml(r.workType || '') + '</span>' +
+              '</span>' +
+            '</div>' +
+            acts +
           '</div>';
       }
     }
@@ -137,6 +148,25 @@
           '<span class="adm-sched__date">' + Utils.escapeHtml(todayLabel) + '</span>' +
         '</div>' +
         body +
+      '</div>';
+  }
+
+  // サイドバーの売上（当日・当月）
+  function salesHtml() {
+    var Utils = window.Utils;
+    var S = window.Sales;
+    if (!S) return '';
+    return '' +
+      '<div class="adm-sside-sales">' +
+        '<div class="adm-sside-sales__title">売上</div>' +
+        '<div class="adm-sside-sales__row">' +
+          '<span class="adm-sside-sales__lab">本日</span>' +
+          '<span class="adm-sside-sales__num">' + Utils.escapeHtml(Utils.yen(S.todayTotal())) + '</span>' +
+        '</div>' +
+        '<div class="adm-sside-sales__row">' +
+          '<span class="adm-sside-sales__lab">当月</span>' +
+          '<span class="adm-sside-sales__num">' + Utils.escapeHtml(Utils.yen(S.monthTotal())) + '</span>' +
+        '</div>' +
       '</div>';
   }
 
@@ -159,6 +189,7 @@
         '<span class="adm-sidebar__cta-icon" aria-hidden="true">' + ICONS.userPlus + '</span>' +
         '顧客を登録' +
       '</button>' +
+      salesHtml() +
       scheduleHtml();
 
     // ナビ項目: セクション切替
@@ -177,9 +208,27 @@
       });
     }
 
-    // 当日スケジュール項目: 予約管理へ
-    var sched = mount.querySelectorAll('.adm-sched__item');
-    for (var k = 0; k < sched.length; k++) bindSection(sched[k], 'reservations');
+    // 当日スケジュール: 完了 / キャンセル / 項目クリックで予約管理へ
+    var schedWrap = mount.querySelector('.adm-sched');
+    if (schedWrap) {
+      schedWrap.addEventListener('click', function (e) {
+        var comp = e.target.closest ? e.target.closest('[data-sched-complete]') : null;
+        if (comp && window.AdminReservations && AdminReservations.startComplete) {
+          e.stopPropagation();
+          AdminReservations.startComplete(comp.getAttribute('data-sched-complete'));
+          return;
+        }
+        var canc = e.target.closest ? e.target.closest('[data-sched-cancel]') : null;
+        if (canc && window.AdminReservations && AdminReservations.cancelReservation) {
+          e.stopPropagation();
+          AdminReservations.cancelReservation(canc.getAttribute('data-sched-cancel'));
+          return;
+        }
+        // 予約カード本体クリック（ボタン以外）で予約管理へ
+        var item = e.target.closest ? e.target.closest('.adm-sched__item') : null;
+        if (item && window.AdminUI) AdminUI.go('reservations');
+      });
+    }
   }
 
   // 要素にクリック/キーボードでのセクション遷移を付与
