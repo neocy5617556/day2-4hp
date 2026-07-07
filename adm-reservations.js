@@ -266,9 +266,8 @@
     else render();
   }
 
-  // 予約をキャンセル（削除）する。確認ダイアログの後に反映。
+  // 予約をキャンセル（削除）する。確認ダイアログは出さず即時反映。
   function cancelReservation(id) {
-    if (typeof window.confirm === 'function' && !window.confirm('この予約をキャンセルしますか？')) return;
     var App = window.App;
     var list = (App.state && App.state.reservations) || [];
     App.state.reservations = list.filter(function (x) { return x.id !== id; });
