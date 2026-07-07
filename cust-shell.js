@@ -63,6 +63,7 @@
           '<div class="cust-menu">' +
             '<div class="cust-menu__item" data-goto="talk">トーク</div>' +
             '<div class="cust-menu__item" data-goto="request">予約する</div>' +
+            '<div class="cust-menu__item" data-goto="info">マイカー情報</div>' +
             '<div class="cust-menu__item" data-goto="about">会社概要</div>' +
           '</div>' +
           '<div class="cust-switch">' +
@@ -71,6 +72,7 @@
           '</div>' +
           '<section id="cust-talk" class="cust-section"></section>' +
           '<section id="cust-request" class="cust-section"></section>' +
+          '<section id="cust-info" class="cust-section"></section>' +
           '<section id="cust-about" class="cust-section"></section>' +
         '</div>' +
       '</div>';
@@ -116,6 +118,7 @@
   function renderSections() {
     if (window.CustomerTalk && typeof CustomerTalk.render === 'function') CustomerTalk.render();
     if (window.CustomerRequest && typeof CustomerRequest.render === 'function') CustomerRequest.render();
+    if (window.CustomerInfo && typeof CustomerInfo.render === 'function') CustomerInfo.render();
     if (window.CustomerAbout && typeof CustomerAbout.render === 'function') CustomerAbout.render();
   }
 
