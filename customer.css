@@ -1,0 +1,590 @@
+/* =============================================================================
+   サカイオートサービス デモ — customer.css
+   -----------------------------------------------------------------------------
+   役割: お客様側スマホ画面（端末モック内のLINE風UI）専用スタイル。
+         styles.css の「後」に読み込まれ、必要箇所を後勝ちで上書きする。
+
+   デザイン方針:
+   ・端末モックは黒(#1d1d1f)ベゼル＋やわらかい影で「浮遊するスマホ」を演出。
+   ・スマホ内はLINEの世界観: 明るい青みグレー地(#f5f5f7)・緑の公式アカウント帯
+     (#06c755)・白の受信吹き出し。送信系ボタンも LINE グリーン。
+   ・スマホ内(.phone__screen 配下)は徹底して「明るいテーマ」。
+     input/select/textarea が暗く沈まないよう白地＋淡い枠線で統一。
+   ・数値/時刻は tabular-nums で桁ぶれ防止。フォントはシステムフォント継承。
+
+   ★不具合修正(最重要): ノッチ(高さ約26px)が画面上部コンテンツに被る問題を、
+     .phone__screen に padding-top:26px を与えて解消。緑の .cust-appbar は
+     sticky top:0 でこの「コンテンツボックス上端(=paddingの下)」に貼り付くため、
+     スクロール中もノッチに潜り込まない。各 .cust-section には
+     scroll-margin-top を与え、goSection のスクロール先頭がアプリバーに隠れない。
+
+   ・純CSSのみ。外部フォント/CDNなし。
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   ローカルトークン（styles.css 非依存で自足させる。値が無くても崩れない）
+----------------------------------------------------------------------------- */
+:root {
+  --cust-green: #06c755;        /* LINE グリーン(公式アカウント帯/送信) */
+  --cust-green-press: #05b34c;  /* 押下時 */
+  --cust-screen: #f5f5f7;       /* スマホ内トーク地(明るい青みグレー) */
+  --cust-bubble: #ffffff;       /* 受信吹き出し */
+  --cust-bezel: #1d1d1f;        /* 端末の黒ベゼル/ノッチ */
+  --cust-ink: #1d1d1f;          /* 主文字 */
+  --cust-ink-mute: #6e6e73;     /* 補足文字 */
+  --cust-ink-faint: #8a8a8f;    /* 極小注記 */
+  --cust-hair: #e3e3e6;         /* 罫線(淡) */
+  --cust-hair-2: #d2d2d7;       /* 罫線(標準) */
+  --cust-focus: rgba(6, 199, 85, 0.35); /* フォーカスリング(緑) */
+  --cust-notch-h: 26px;         /* ノッチ高さ想定 */
+  --cust-appbar-h: 58px;        /* アプリバー概算高さ(scroll-margin算出用) */
+}
+
+/* -----------------------------------------------------------------------------
+   1. 端末モック（.phone / notch / screen）
+----------------------------------------------------------------------------- */
+.phone {
+  position: relative;
+  width: 380px;
+  max-width: 100%;
+  margin: 0 auto;               /* 中央寄せ */
+  padding: 12px;                /* ベゼルの厚み */
+  background: var(--cust-bezel);
+  border-radius: 46px;          /* 端末の大きな角丸 */
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.30),
+    0 6px 16px rgba(0, 0, 0, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05); /* ベゼル内側のハイライト */
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+}
+
+/* 上部中央のノッチ（絶対配置・黒・下側だけ角丸・最前面） */
+.phone__notch {
+  position: absolute;
+  top: 12px;                    /* ベゼル内側の上端に合わせる */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 148px;
+  height: var(--cust-notch-h);
+  background: var(--cust-bezel);
+  border-radius: 0 0 16px 16px; /* 下側のみ丸める */
+  z-index: 30;                  /* 画面コンテンツより前面 */
+  pointer-events: none;         /* 下のスクロール操作を邪魔しない */
+}
+
+/* 内側スクリーン: 明るいLINE地・角丸・縦スクロール・縦フレックス */
+.phone__screen.cust-scroll,
+.phone__screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 720px;
+  max-height: 78vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--cust-screen);
+  border-radius: 36px;
+  /* ★ノッチ被り解消: 上端にノッチ高さ分の余白を確保 */
+  padding-top: var(--cust-notch-h);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  color: var(--cust-ink);
+  box-sizing: border-box;
+}
+
+/* スクロールバーを控えめに（対応ブラウザのみ） */
+.phone__screen.cust-scroll::-webkit-scrollbar { width: 0; height: 0; }
+.phone__screen.cust-scroll { scrollbar-width: none; }
+
+/* -----------------------------------------------------------------------------
+   2. アプリバー（緑の公式アカウント帯）
+   sticky top:0 は「コンテンツボックス上端(=padding-top:26pxの下)」に貼り付く。
+   よってスクロール中もノッチ(26px)に潜り込まない。
+----------------------------------------------------------------------------- */
+.cust-appbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--cust-green);
+  color: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+
+.cust-appbar__avatar {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.30);  /* 白半透明の丸 */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.cust-appbar__brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.25;
+  min-width: 0;                 /* テキスト省略のため */
+}
+
+.cust-appbar__name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cust-appbar__official {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* 右端メニューボタン: 透明背景・白・タップ領域確保 */
+.cust-appbar__menu-btn {
+  margin-left: auto;            /* 右端へ押しやる */
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cust-appbar__menu-btn:hover { background: rgba(255, 255, 255, 0.14); }
+.cust-appbar__menu-btn:active { background: rgba(255, 255, 255, 0.24); }
+
+/* ハンバーガー: 横三本線（中央線=本体, 上下線=擬似要素） */
+.cust-hamburger,
+.cust-hamburger::before,
+.cust-hamburger::after {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  content: "";
+}
+.cust-hamburger {
+  position: relative;
+}
+.cust-hamburger::before { position: absolute; left: 0; top: -6px; }
+.cust-hamburger::after  { position: absolute; left: 0; top: 6px; }
+
+/* -----------------------------------------------------------------------------
+   3. ハンバーガーメニュー（ドロップダウン）
+----------------------------------------------------------------------------- */
+.cust-menu {
+  display: none;                /* 既定は非表示 */
+  position: absolute;
+  top: calc(var(--cust-notch-h) + var(--cust-appbar-h) - 4px);
+  right: 12px;
+  z-index: 25;                  /* アプリバーより前面 */
+  min-width: 168px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.10);
+  overflow: hidden;
+  padding: 4px 0;
+}
+.cust-menu--open { display: block; }  /* JS がこのクラスで開く */
+
+.cust-menu__item {
+  padding: 13px 18px;           /* タップしやすい大きめ余白 */
+  font-size: 15px;
+  color: var(--cust-ink);
+  cursor: pointer;
+  border-bottom: 1px solid var(--cust-hair);
+  -webkit-tap-highlight-color: transparent;
+}
+.cust-menu__item:last-child { border-bottom: 0; }
+.cust-menu__item:hover  { background: #f2f2f4; }
+.cust-menu__item:active { background: #e8f8ee; }  /* 緑みの淡いアクティブ */
+
+/* -----------------------------------------------------------------------------
+   4. デモ切替バー（.cust-switch）: 小さく控えめ
+----------------------------------------------------------------------------- */
+.cust-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid var(--cust-hair);
+  font-size: 11px;
+}
+.cust-switch__label {
+  color: var(--cust-ink-mute);
+  white-space: nowrap;
+}
+.cust-switch__select {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--cust-ink);
+  background: #fff;             /* 明るいテーマ */
+  border: 1px solid var(--cust-hair-2);
+  border-radius: 8px;
+  padding: 5px 8px;
+  -webkit-appearance: menulist; /* 明るいネイティブ見た目 */
+  appearance: menulist;
+}
+.cust-switch__select:focus {
+  outline: none;
+  border-color: var(--cust-green);
+  box-shadow: 0 0 0 3px var(--cust-focus);
+}
+
+/* -----------------------------------------------------------------------------
+   5. セクション（.cust-section）
+   ★ scroll-margin-top をノッチ＋アプリバー分与え、goSection のスクロール先頭が
+     アプリバーに隠れないようにする。
+----------------------------------------------------------------------------- */
+.cust-section {
+  scroll-margin-top: calc(var(--cust-notch-h) + var(--cust-appbar-h) + 6px);
+}
+.cust-section:empty { display: none; } /* 未描画セクションで余白を作らない */
+
+/* -----------------------------------------------------------------------------
+   6. トーク（LINE 風受信タイムライン）
+----------------------------------------------------------------------------- */
+.talk {
+  padding: 14px 12px 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 中央の日付ピル */
+.talk__daysep {
+  align-self: center;
+  margin: 10px auto 14px;
+  padding: 3px 12px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+  font-size: 11px;
+  border-radius: 999px;
+  text-align: center;
+  width: max-content;
+  max-width: 80%;
+}
+
+.talk__msg {
+  margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;      /* 受信は左寄せ */
+}
+
+/* 受信吹き出し（白・角丸・小さな影・左寄せ） */
+.talk__bubble {
+  max-width: 82%;
+  padding: 9px 12px;
+  border-radius: 4px 16px 16px 16px; /* 左上だけ角を締めてLINEらしく */
+  background: var(--cust-bubble);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.talk__bubble--in {
+  align-self: flex-start;
+}
+
+/* 緑の小見出し（カテゴリ） */
+.talk__cat {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cust-green);
+  margin-bottom: 3px;
+}
+
+.talk__title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--cust-ink);
+  line-height: 1.35;
+}
+
+.talk__body {
+  font-size: 13px;
+  color: var(--cust-ink);
+  line-height: 1.5;
+  margin-top: 2px;
+  white-space: pre-wrap;        /* 本文の改行を保持 */
+}
+
+/* 極小の時刻（吹き出し外・右下寄り） */
+.talk__time {
+  font-size: 10px;
+  color: var(--cust-ink-faint);
+  margin-top: 4px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 「※」補足（LINE配信の注記） */
+.talk__linenote {
+  font-size: 10px;
+  color: var(--cust-ink-faint);
+  margin-top: 3px;
+  padding-left: 2px;
+}
+
+/* 空表示 */
+.talk__empty {
+  text-align: center;
+  color: var(--cust-ink-mute);
+  font-size: 13px;
+  padding: 40px 16px;
+}
+
+/* -----------------------------------------------------------------------------
+   7. 予約リクエストフォーム（明るいテーマ）
+----------------------------------------------------------------------------- */
+.req-form {
+  margin: 8px 12px 18px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.req-form__title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--cust-ink);
+  margin-bottom: 4px;
+}
+
+.req-form__hint {
+  font-size: 12px;
+  color: var(--cust-ink-mute);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.req-form__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cust-ink);
+  margin: 12px 0 5px;
+}
+
+/* input / select / textarea 共通: 明るい配色・緑フォーカス */
+.req-form__input,
+.req-form__textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 14px;
+  color: var(--cust-ink);
+  background: #fff;             /* 暗くならない */
+  border: 1px solid var(--cust-hair-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* select はネイティブの矢印を残して明るく */
+.req-form__input {
+  -webkit-appearance: menulist;
+  appearance: menulist;
+}
+.req-form__textarea {
+  min-height: 60px;
+  resize: vertical;
+  line-height: 1.5;
+  font-variant-numeric: normal;
+}
+.req-form__input:focus,
+.req-form__textarea:focus {
+  outline: none;
+  border-color: var(--cust-green);
+  box-shadow: 0 0 0 3px var(--cust-focus);
+}
+.req-form__input::placeholder,
+.req-form__textarea::placeholder { color: var(--cust-ink-faint); }
+
+/* 送信ボタン: LINE グリーン・幅100%・タップしやすい */
+.req-form__submit {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px 16px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--cust-green);
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s ease;
+}
+.req-form__submit:hover  { background: #06b84f; }
+.req-form__submit:active { background: var(--cust-green-press); }
+
+/* 成功メッセージ（緑系背景） */
+.req-form__done {
+  padding: 12px 14px;
+  background: rgba(6, 199, 85, 0.12);
+  border: 1px solid rgba(6, 199, 85, 0.30);
+  color: #0a7a38;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+/* 満席の注意メッセージ（オレンジ/黄系で目立たせる） */
+.req-form__full {
+  padding: 12px 14px;
+  background: rgba(255, 149, 0, 0.14);
+  border: 1px solid rgba(255, 149, 0, 0.38);
+  color: #9a5a00;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* -----------------------------------------------------------------------------
+   8. 会社概要（.cust-about・明るいカード）
+----------------------------------------------------------------------------- */
+.cust-about {
+  margin: 8px 12px 22px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-variant-numeric: tabular-nums;
+}
+
+.cust-about__title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--cust-ink);
+  margin: 0 0 6px;
+}
+
+.cust-about__lead {
+  font-size: 13px;
+  color: var(--cust-ink-mute);
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+
+.cust-about__table {
+  border-top: 1px solid var(--cust-hair);
+}
+
+.cust-about__row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--cust-hair);
+}
+
+.cust-about__label {
+  flex: 0 0 74px;               /* ラベル幅を固定気味に */
+  font-size: 12px;
+  color: var(--cust-ink-mute);
+}
+
+.cust-about__value {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--cust-ink);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* サービスチップ（フレックス折返し） */
+.cust-about__services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+.cust-about__service {
+  padding: 6px 12px;
+  background: rgba(6, 199, 85, 0.10);
+  color: #0a7a38;
+  border-radius: 999px;         /* ピル */
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* 電話CTA */
+.cust-about__cta {
+  margin-top: 16px;
+}
+.cust-about__cta-button,
+.cust-about__cta > a {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 16px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--cust-green);
+  border-radius: 12px;
+  -webkit-tap-highlight-color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.cust-about__cta-button:hover,
+.cust-about__cta > a:hover { background: #06b84f; }
+.cust-about__cta-button:active,
+.cust-about__cta > a:active { background: var(--cust-green-press); }
+
+/* -----------------------------------------------------------------------------
+   9. スマホ内フォーム全般の明るさ担保（暗色化の予防・後勝ち）
+----------------------------------------------------------------------------- */
+.phone__screen input,
+.phone__screen select,
+.phone__screen textarea {
+  color: var(--cust-ink);
+  background-color: #fff;
+}
+
+/* -----------------------------------------------------------------------------
+   10. レスポンシブ: 画面幅 440px 以下は端末を画面にフィット
+----------------------------------------------------------------------------- */
+@media (max-width: 440px) {
+  .phone {
+    width: 100%;
+    padding: 8px;
+    border-radius: 34px;
+  }
+  .phone__notch {
+    top: 8px;
+  }
+  .phone__screen.cust-scroll,
+  .phone__screen {
+    height: auto;
+    max-height: 82vh;
+    border-radius: 26px;
+  }
+  .talk__bubble { max-width: 86%; }
+  .cust-about__label { flex-basis: 66px; }
+}
