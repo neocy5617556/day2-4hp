@@ -355,11 +355,14 @@
    7. 予約リクエストフォーム（明るいテーマ）
 ----------------------------------------------------------------------------- */
 .req-form {
-  margin: 8px 12px 18px;
+  margin: 8px 12px 6px;
   padding: 16px;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  /* 旧 styles.css の max-height:46%/overflow による切れを解除（フォーム全体を表示） */
+  max-height: none;
+  overflow: visible;
 }
 
 .req-form__title {
@@ -591,7 +594,7 @@
 
 /* ── マイカー情報セクション ─────────────────────────────── */
 .cust-info {
-  margin: 12px;
+  margin: 6px 12px;
   padding: 18px;
   background: #ffffff;
   border-radius: 16px;
