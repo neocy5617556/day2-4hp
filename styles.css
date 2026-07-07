@@ -936,6 +936,125 @@ table { border-collapse: collapse; width: 100%; }
 .adm-filter-chip button:hover { background: rgba(0, 113, 227, 0.30); }
 
 /* -----------------------------------------------------------------------------
+   15c. 売上（控えめに表示。車検リマインドより目立たせない）
+----------------------------------------------------------------------------- */
+/* ダッシュボードの売上サマリー: KPIより一段控えめな細い帯 */
+.adm-sales-wrap { margin-bottom: var(--sp-5); }
+.adm-sales {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-md);
+  padding: 11px 18px;
+}
+.adm-sales__label { font-size: 12px; font-weight: 700; color: var(--ink-mute); }
+.adm-sales__stats { display: flex; gap: var(--sp-5); flex-wrap: wrap; }
+.adm-sales__stat { display: flex; align-items: baseline; gap: 6px; }
+.adm-sales__num { font-size: 17px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.adm-sales__cap { font-size: 11.5px; color: var(--ink-faint); }
+.adm-sales__stat--sub .adm-sales__num { font-size: 14px; color: var(--ink-2); }
+
+/* 予約カードの完了フォーム（工賃・部品代の入力） */
+.resv-complete {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--hair-strong);
+}
+.resv-complete__row { display: flex; gap: 8px; }
+.resv-complete__field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.resv-complete__field input { padding: 7px 9px; font-size: 13px; }
+.resv-complete__actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* 完了済み予約カードの売上表示（控えめ） */
+.resv-card--done { background: var(--surface-2); }
+.resv-card__amount {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hair);
+}
+.resv-card__amount-num { font-size: 13.5px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.resv-card__amount-sub { font-size: 11px; color: var(--ink-faint); }
+
+/* 完了ステータスの小バッジ（中立グレー） */
+.adm-status--completed { color: var(--ink-mute); background: var(--bg-sunken); }
+
+/* 顧客名（詳細を開くリンク） */
+.adm-cust-name--link {
+  font: inherit;
+  font-weight: 600;
+  color: var(--blue);
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+}
+.adm-cust-name--link:hover { text-decoration: underline; }
+
+/* 顧客詳細カード（累計売上・来店回数・完了作業履歴） */
+.adm-cust-detail {
+  background: var(--surface-2);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-4);
+}
+.adm-cust-detail__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+.adm-cust-detail__name { font-size: 17px; font-weight: 600; }
+.adm-cust-detail__kana { font-size: 11.5px; color: var(--ink-faint); }
+.adm-cust-detail__info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  margin: 10px 0 4px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.adm-cust-detail__sales {
+  display: flex;
+  gap: var(--sp-6);
+  margin-top: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.adm-cust-detail__stat { display: flex; flex-direction: column; }
+.adm-cust-detail__stat-num { font-size: 20px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.adm-cust-detail__stat-cap { font-size: 11.5px; color: var(--ink-mute); }
+.adm-cust-detail__hist-title { font-size: 12px; font-weight: 700; color: var(--ink-mute); margin: 14px 0 6px; }
+.adm-cust-detail__hist {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--hair);
+  font-size: 13px;
+}
+.adm-cust-detail__hist-date { width: 78px; color: var(--ink-mute); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.adm-cust-detail__hist-work { flex: 1; }
+.adm-cust-detail__hist-amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+.adm-cust-detail__empty { font-size: 12.5px; color: var(--ink-faint); padding: 8px 0; }
+.adm-cust-detail__actions { margin-top: 14px; }
+
+/* -----------------------------------------------------------------------------
    16. レスポンシブ
 ----------------------------------------------------------------------------- */
 @media (max-width: 900px) {

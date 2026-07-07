@@ -110,12 +110,18 @@
       .replace(/'/g, '&#39;');
   };
 
+  // 金額を "¥12,300" 形式に整形（数値でなければ "¥0"）
+  Utils.yen = function (n) {
+    var v = Math.round(Number(n) || 0);
+    return '¥' + v.toLocaleString('ja-JP');
+  };
+
   // ============================================================
   // Store : 永続化・初期データ生成
   // ============================================================
   var Store = {};
 
-  Store.KEY = 'sakai_auto_state_v2';
+  Store.KEY = 'sakai_auto_state_v3';
 
   // localStorage から読込（無い / パース失敗時は null）
   Store.load = function () {
@@ -186,13 +192,17 @@
     var reservations = [
       // --- 本日の予約（サイドバー「本日のスケジュール」用） ---
       {
+        // 本日 午前の分は作業完了済み → 本日の売上に計上される
         id: Utils.uid('resv'),
         customerId: customers[1].id,
         date: ymd(0),
         time: '09:00',
         workType: '車検整備',
         source: 'shop',
-        status: 'confirmed',
+        status: 'completed',
+        laborFee: 25000,
+        partsFee: 38000,
+        completedAt: pastIso(0),
         createdAt: pastIso(2)
       },
       {
@@ -257,6 +267,39 @@
         createdAt: pastIso(1)
       }
     ];
+
+    // --- 完了済みの作業履歴（売上の裏付け。当月分＋過去の来店） ---
+    // 完了予約から本日/今月の売上・顧客別累計・来店回数を自動集計する。
+    var doneIso = function (offset) {
+      var d = Utils.addDays(today, offset);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 11, 0, 0).toISOString();
+    };
+    var completed = function (custIdx, offset, time, workType, laborFee, partsFee) {
+      return {
+        id: Utils.uid('resv'),
+        customerId: customers[custIdx].id,
+        date: ymd(offset),
+        time: time,
+        workType: workType,
+        source: 'shop',
+        status: 'completed',
+        laborFee: laborFee,
+        partsFee: partsFee,
+        completedAt: doneIso(offset),
+        createdAt: doneIso(offset)
+      };
+    };
+    reservations = reservations.concat([
+      // 今月・本日より前（今月の売上に計上される）
+      completed(0, -2, '10:00', '車検整備', 28000, 45000),
+      completed(3, -4, '13:00', 'オイル交換', 3000, 4800),
+      completed(6, -6, '09:30', '12ヶ月点検', 12000, 8500),
+      // 過去の来店（顧客別の累計・来店回数に反映。今月売上には含めない）
+      completed(0, -38, '11:00', 'タイヤ交換', 6000, 32000),
+      completed(2, -22, '14:00', '車検整備', 26000, 41000),
+      completed(5, -55, '10:30', 'オイル交換', 3000, 4200),
+      completed(1, -70, '09:00', '車検整備', 27000, 39000)
+    ]);
 
     // --- 通知 初期2〜3件（既に届いている体裁） ---
     var notifications = [

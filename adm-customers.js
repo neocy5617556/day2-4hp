@@ -7,6 +7,17 @@
   // フォームの開閉と編集対象。formMode: null | 'new' | 'edit'
   var formMode = null;
   var editingId = null;
+  // 顧客詳細を開いている対象ID（無ければnull）。
+  var detailId = null;
+
+  // IDから顧客を取得。
+  function findCustomer(id) {
+    var all = (window.App && window.App.state && window.App.state.customers) || [];
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].id === id) return all[i];
+    }
+    return null;
+  }
 
   // 顧客が一致するか（部分一致・小文字化）を判定するための検索対象文字列を作る。
   function searchText(c) {
@@ -58,7 +69,8 @@
 
     tr.innerHTML =
       '<td>' +
-        '<div class="adm-cust-name">' + Utils.escapeHtml(c.name) + '</div>' +
+        '<button type="button" class="adm-cust-name adm-cust-name--link" data-detail="' +
+          Utils.escapeHtml(c.id) + '">' + Utils.escapeHtml(c.name) + '</button>' +
         '<div class="adm-cust-kana">' + Utils.escapeHtml(c.kana) + '</div>' +
       '</td>' +
       '<td>' + Utils.escapeHtml(c.carModel) + '</td>' +
@@ -189,6 +201,81 @@
     emptyEl.style.display = shown === 0 ? '' : 'none';
   }
 
+  // 顧客詳細カード（累計売上・来店回数・完了作業履歴）を生成する。
+  function buildDetail(c) {
+    var Utils = window.Utils;
+    var status = Utils.shakenStatus(c.shakenExpiry);
+    var sales = (window.Sales && Sales.forCustomer)
+      ? Sales.forCustomer(c.id)
+      : { total: 0, visits: 0, items: [] };
+
+    var el = document.createElement('div');
+    el.className = 'adm-cust-detail';
+
+    var historyHtml;
+    if (sales.items.length === 0) {
+      historyHtml = '<div class="adm-cust-detail__empty">完了した作業の履歴はまだありません</div>';
+    } else {
+      historyHtml = '';
+      for (var i = 0; i < sales.items.length; i++) {
+        var it = sales.items[i];
+        historyHtml +=
+          '<div class="adm-cust-detail__hist">' +
+            '<span class="adm-cust-detail__hist-date">' + Utils.escapeHtml(Utils.fmtJPShort(it.date)) + '</span>' +
+            '<span class="adm-cust-detail__hist-work">' + Utils.escapeHtml(it.workType || '') + '</span>' +
+            '<span class="adm-cust-detail__hist-amt">' + Utils.escapeHtml(Utils.yen(it.amount)) + '</span>' +
+          '</div>';
+      }
+    }
+
+    el.innerHTML =
+      '<div class="adm-cust-detail__head">' +
+        '<div>' +
+          '<div class="adm-cust-detail__name">' + Utils.escapeHtml(c.name) + '</div>' +
+          '<div class="adm-cust-detail__kana">' + Utils.escapeHtml(c.kana) + '</div>' +
+        '</div>' +
+        '<button type="button" class="adm-btn adm-btn--sm" data-detail-close="1">閉じる</button>' +
+      '</div>' +
+      '<div class="adm-cust-detail__info">' +
+        '<span>' + Utils.escapeHtml(c.carModel) + '</span>' +
+        '<span>' + Utils.escapeHtml(c.plate) + '</span>' +
+        '<span>' + Utils.escapeHtml(c.phone || '') + '</span>' +
+        '<span class="badge ' + status.className + '">車検 ' + Utils.escapeHtml(status.label) + '</span>' +
+      '</div>' +
+      '<div class="adm-cust-detail__sales">' +
+        '<div class="adm-cust-detail__stat">' +
+          '<span class="adm-cust-detail__stat-num">' + Utils.escapeHtml(Utils.yen(sales.total)) + '</span>' +
+          '<span class="adm-cust-detail__stat-cap">累計売上</span>' +
+        '</div>' +
+        '<div class="adm-cust-detail__stat">' +
+          '<span class="adm-cust-detail__stat-num">' + sales.visits + '回</span>' +
+          '<span class="adm-cust-detail__stat-cap">来店回数</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="adm-cust-detail__hist-title">完了した作業</div>' +
+      historyHtml +
+      '<div class="adm-cust-detail__actions">' +
+        '<button type="button" class="adm-btn adm-btn--sm" data-detail-edit="' +
+          Utils.escapeHtml(c.id) + '">この顧客を編集</button>' +
+      '</div>';
+
+    // 閉じる / 編集。
+    el.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('[data-detail-close]')) {
+        detailId = null; render(); return;
+      }
+      var ed = e.target.closest ? e.target.closest('[data-detail-edit]') : null;
+      if (ed) {
+        formMode = 'edit';
+        editingId = ed.getAttribute('data-detail-edit');
+        detailId = null;
+        render();
+      }
+    });
+
+    return el;
+  }
+
   // メイン描画。
   function render() {
     var mount = document.getElementById('adm-customers');
@@ -220,6 +307,13 @@
     head.appendChild(title);
     head.appendChild(newBtn);
     section.appendChild(head);
+
+    // (0) 顧客詳細（開いている場合のみ）。
+    if (detailId) {
+      var detailCust = findCustomer(detailId);
+      if (detailCust) section.appendChild(buildDetail(detailCust));
+      else detailId = null;
+    }
 
     // (5) フォーム（開いている場合のみ）。
     if (formMode === 'new') {
@@ -300,13 +394,22 @@
     mount.innerHTML = '';
     mount.appendChild(section);
 
-    // 行「編集」ボタンの委譲ハンドラ。
+    // 行の「編集」「顧客名(詳細)」の委譲ハンドラ。
     tbody.addEventListener('click', function (e) {
-      var btn = e.target && e.target.closest ? e.target.closest('[data-edit]') : null;
-      if (!btn) return;
-      formMode = 'edit';
-      editingId = btn.getAttribute('data-edit');
-      render();
+      var editBtn = e.target && e.target.closest ? e.target.closest('[data-edit]') : null;
+      if (editBtn) {
+        formMode = 'edit';
+        editingId = editBtn.getAttribute('data-edit');
+        detailId = null;
+        render();
+        return;
+      }
+      var detailBtn = e.target && e.target.closest ? e.target.closest('[data-detail]') : null;
+      if (detailBtn) {
+        detailId = detailBtn.getAttribute('data-detail');
+        formMode = null;
+        render();
+      }
     });
 
     // 初期検索語で一度トグルを適用（フィルタ結果に対する部分一致）。

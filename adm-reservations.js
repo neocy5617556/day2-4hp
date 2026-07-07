@@ -5,6 +5,8 @@
 
   // 追加フォームの開閉状態（module変数で保持）。
   var formOpen = false;
+  // 完了(売上記録)フォームを開いている予約のID（無ければnull）。
+  var completingId = null;
 
   // 作業内容の選択肢。
   var WORK_TYPES = ['車検整備', 'オイル交換', '12ヶ月点検', 'タイヤ交換', 'その他'];
@@ -66,9 +68,52 @@
   // status バッジのHTMLを生成。
   function statusBadge(status) {
     var Utils = window.Utils;
-    var mod = status === 'requested' ? '--requested' : '--confirmed';
-    var label = status === 'requested' ? 'リクエスト' : '確定';
+    var mod, label;
+    if (status === 'requested') { mod = '--requested'; label = 'リクエスト'; }
+    else if (status === 'completed') { mod = '--completed'; label = '完了'; }
+    else { mod = '--confirmed'; label = '確定'; }
     return '<span class="adm-status adm-status' + mod + '">' + Utils.escapeHtml(label) + '</span>';
+  }
+
+  // 1件の売上金額（工賃 + 部品代）。
+  function amountOf(r) {
+    return (Number(r.laborFee) || 0) + (Number(r.partsFee) || 0);
+  }
+
+  // 予約カードの下部（アクション/完了フォーム/売上表示）を組み立てる。
+  function cardFooter(r) {
+    var Utils = window.Utils;
+    // 完了済み: 売上を控えめに表示。
+    if (r.status === 'completed') {
+      return '<div class="resv-card__amount">' +
+          '<span class="resv-card__amount-num">売上 ' + Utils.escapeHtml(Utils.yen(amountOf(r))) + '</span>' +
+          '<span class="resv-card__amount-sub">工賃 ' + Utils.escapeHtml(Utils.yen(r.laborFee)) +
+            ' / 部品 ' + Utils.escapeHtml(Utils.yen(r.partsFee)) + '</span>' +
+        '</div>';
+    }
+    // 確定済みで、この予約の完了フォームを開いている: 金額入力。
+    if (r.status === 'confirmed' && completingId === r.id) {
+      return '<form class="resv-complete" data-complete-form="' + Utils.escapeHtml(r.id) + '">' +
+          '<div class="resv-complete__row">' +
+            '<label class="resv-complete__field"><span>工賃</span>' +
+              '<input type="number" name="labor" min="0" step="100" inputmode="numeric" placeholder="0"></label>' +
+            '<label class="resv-complete__field"><span>部品代</span>' +
+              '<input type="number" name="parts" min="0" step="100" inputmode="numeric" placeholder="0"></label>' +
+          '</div>' +
+          '<div class="resv-complete__actions">' +
+            '<button type="submit" class="adm-btn adm-btn--primary adm-btn--sm">完了して売上を記録</button>' +
+            '<button type="button" class="adm-btn adm-btn--sm" data-complete-cancel="1">キャンセル</button>' +
+          '</div>' +
+        '</form>';
+    }
+    // 確定済み(未完了): 完了ボタン。
+    if (r.status === 'confirmed') {
+      return '<div class="resv-card__action">' +
+          '<button type="button" class="adm-btn adm-btn--sm" data-complete="' +
+            Utils.escapeHtml(r.id) + '">完了にする</button>' +
+        '</div>';
+    }
+    return '';
   }
 
   // お客様リクエスト強調ブロックを生成（0件ならnull）。
@@ -165,7 +210,9 @@
         var name = customerName(customers, r.customerId);
         var isConflict = !!conflictIds[r.id];
         var card = document.createElement('div');
-        card.className = 'resv-card' + (isConflict ? ' resv-card--conflict' : '');
+        card.className = 'resv-card' +
+          (isConflict ? ' resv-card--conflict' : '') +
+          (r.status === 'completed' ? ' resv-card--done' : '');
         card.innerHTML =
           '<div class="resv-card__body">' +
             '<span class="resv-card__time">' + Utils.escapeHtml(r.time) + '</span>' +
@@ -174,14 +221,56 @@
             '<span class="resv-card__meta">' + srcBadge(r.source) + statusBadge(r.status) +
               (isConflict ? '<span class="adm-conflict-label">⚠ 時間重複</span>' : '') +
             '</span>' +
-          '</div>';
+          '</div>' +
+          cardFooter(r);
         groupEl.appendChild(card);
       }
 
       listWrap.appendChild(groupEl);
     }
 
+    // 完了フロー（完了ボタン→金額入力→記録）をイベント委譲で処理。
+    listWrap.addEventListener('click', function (e) {
+      var t = e.target;
+      var openBtn = t && t.closest ? t.closest('[data-complete]') : null;
+      if (openBtn) { openComplete(openBtn.getAttribute('data-complete')); return; }
+      var cancel = t && t.closest ? t.closest('[data-complete-cancel]') : null;
+      if (cancel) { completingId = null; render(); return; }
+    });
+    listWrap.addEventListener('submit', function (e) {
+      var form = e.target && e.target.closest ? e.target.closest('[data-complete-form]') : null;
+      if (!form) return;
+      e.preventDefault();
+      var id = form.getAttribute('data-complete-form');
+      var labor = form.elements.labor ? form.elements.labor.value : '';
+      var parts = form.elements.parts ? form.elements.parts.value : '';
+      saveComplete(id, labor, parts);
+    });
+
     return listWrap;
+  }
+
+  // 完了フォームを開く。
+  function openComplete(id) {
+    completingId = id;
+    render();
+  }
+
+  // 完了 = 作業に金額を紐付けて売上として記録する。
+  function saveComplete(id, labor, parts) {
+    var App = window.App;
+    var list = (App.state && App.state.reservations) || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) {
+        list[i].status = 'completed';
+        list[i].laborFee = Math.max(0, Math.round(Number(labor) || 0));
+        list[i].partsFee = Math.max(0, Math.round(Number(parts) || 0));
+        list[i].completedAt = new Date().toISOString();
+        break;
+      }
+    }
+    completingId = null;
+    App.save(); // 保存＋全再描画（KPI/売上サマリー/顧客詳細も更新される）。
   }
 
   // 予約追加フォームを生成。
@@ -312,15 +401,18 @@
     var requestsBlock = buildRequests(reservations, customers);
     if (requestsBlock) section.appendChild(requestsBlock);
 
-    // 予約一覧 or 空表示。
-    if (reservations.length === 0) {
+    // 予約一覧は「本日以降」に絞る（過去の完了作業は売上・顧客詳細に集約し、一覧は行動対象だけ）。
+    var todayYMD = window.Utils.toYMD(window.Utils.today());
+    var upcoming = reservations.filter(function (r) { return (r.date || '') >= todayYMD; });
+
+    if (upcoming.length === 0) {
       var empty = document.createElement('div');
       empty.className = 'adm-empty';
-      empty.textContent = '予約はまだありません';
+      empty.textContent = '本日以降の予約はありません';
       section.appendChild(empty);
     } else {
-      var conflictIds = findConflicts(reservations);
-      section.appendChild(buildList(reservations, customers, conflictIds));
+      var conflictIds = findConflicts(upcoming);
+      section.appendChild(buildList(upcoming, customers, conflictIds));
     }
 
     mount.innerHTML = '';

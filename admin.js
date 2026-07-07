@@ -52,6 +52,7 @@
       '  <aside class="adm-sidebar" id="adm-sidebar"></aside>' +
       '  <div class="adm-main">' +
       '    <div class="adm-kpi-wrap" id="adm-kpi"></div>' +
+      '    <div class="adm-sales-wrap" id="adm-sales"></div>' +
       '    <section class="adm-panel" id="adm-reservations"></section>' +
       '    <section class="adm-panel" id="adm-customers"></section>' +
       '    <section class="adm-panel" id="adm-notifications"></section>' +
@@ -69,6 +70,7 @@
       // サブモジュール描画（未ロードでも落ちないよう存在チェック）
       call(window.AdminSidebar);
       call(window.AdminKpi);
+      call(window.AdminSales);
       call(window.AdminReservations);
       call(window.AdminCustomers);
       call(window.AdminNotifications);
