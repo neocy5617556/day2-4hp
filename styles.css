@@ -1,0 +1,804 @@
+/* =============================================================================
+   サカイオートサービス デモ — styles.css
+   -----------------------------------------------------------------------------
+   デザイン方針: Apple 風のライト & ミニマル。
+   ・明るいグレー地(#f5f5f7)＋白カード。境界線は極力使わず、余白と繊細な影で構造化。
+   ・アクセントは Apple ブルー(#0071e3) を一点差し。装飾を削ぎ、内容を主役に。
+   ・角丸は大きめ(カード18px)、影はやわらかく低コントラスト。
+   ・タイポは San Francisco 系のシステムフォント＋日本語ゴシック。数値は tabular-nums。
+   ・二層構造: 管理画面もお客様スマホ画面も同じライトトーン。スマホは端末モック内に。
+   ・純CSSのみ。外部フォント/CDNなし。クラスが欠けても崩れないよう base にも土台を敷く。
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   1. デザイントークン
+----------------------------------------------------------------------------- */
+:root {
+  /* --- 地 / 面 --- */
+  --bg: #f5f5f7;            /* アプリ地(Apple のシステムグレー) */
+  --bg-sunken: #ececee;    /* 一段沈んだ面(セグメント地など) */
+  --surface: #ffffff;      /* カード/パネル */
+  --surface-2: #fbfbfd;    /* 表ヘッダ等のごく淡い面 */
+  --hair: #e3e3e6;         /* 罫線(淡) */
+  --hair-strong: #d2d2d7;  /* 罫線(標準・Apple の separator) */
+
+  /* --- テキスト --- */
+  --ink: #1d1d1f;          /* 主文字 */
+  --ink-2: #424245;        /* 準主文字 */
+  --ink-mute: #6e6e73;     /* サブ/補足 */
+  --ink-faint: #86868b;    /* 極小注記 */
+
+  /* --- アクセント(Apple ブルー) --- */
+  --blue: #0071e3;
+  --blue-hover: #0077ed;
+  --blue-press: #006edb;
+  --blue-tint: rgba(0, 113, 227, 0.10);
+  --focus-ring: rgba(0, 113, 227, 0.35);
+
+  /* --- ステータス色(Apple システムカラー基調) --- */
+  --st-expired: #d70015;   /* 期限切れ=レッド(文字) */
+  --st-1m: #b25e00;        /* 1ヶ月以内=オレンジ(文字) */
+  --st-3m: #8a6d00;        /* 3ヶ月以内=イエロー(文字) */
+  --st-ok: #248a3d;        /* 余裕=グリーン(文字) */
+  --st-info: #0071e3;
+
+  --st-expired-bg: rgba(255, 59, 48, 0.12);
+  --st-1m-bg: rgba(255, 149, 0, 0.15);
+  --st-3m-bg: rgba(255, 204, 0, 0.20);
+  --st-ok-bg: rgba(52, 199, 89, 0.15);
+
+  /* --- LINE / お客様スマホ --- */
+  --line-screen: #f5f5f7;    /* トーク地(明るいグレー) */
+  --line-header: #06c755;    /* LINE グリーン帯 */
+  --line-bubble: #ffffff;    /* 受信吹き出し */
+  --line-send: #06c755;      /* 送信ボタン(LINE グリーン) */
+
+  /* --- 形状 --- */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-card: 18px;
+  --r-pill: 980px;
+
+  /* --- 影(やわらかく低コントラスト) --- */
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.05);
+  --sh-2: 0 2px 8px rgba(0, 0, 0, 0.05), 0 10px 28px rgba(0, 0, 0, 0.06);
+  --sh-3: 0 12px 48px rgba(0, 0, 0, 0.14);
+  --sh-focus: 0 0 0 4px var(--focus-ring);
+
+  /* --- 余白スケール --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 44px;
+
+  /* --- タイポ --- */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+             "Helvetica Neue", "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+             "Noto Sans JP", "Yu Gothic UI", Meiryo, system-ui, sans-serif;
+
+  color-scheme: light;
+}
+
+/* -----------------------------------------------------------------------------
+   2. リセット / 土台
+----------------------------------------------------------------------------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
+p { margin: 0; }
+
+/* 数値・日付は等幅感 */
+.kpi__num,
+.notif__time,
+.resv-card__time,
+.adm-days,
+.talk__time { font-variant-numeric: tabular-nums; }
+
+/* base: ボタン */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+/* base: フォーム要素(Apple 風の白フィールド) */
+input, select, textarea {
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  width: 100%;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
+select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-mute) 50%),
+    linear-gradient(135deg, var(--ink-mute) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 2px),
+    calc(100% - 13px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: var(--sh-focus);
+}
+input[type="date"], input[type="time"] { min-height: 40px; }
+
+/* base: 表 */
+table { border-collapse: collapse; width: 100%; }
+
+/* ユーティリティ */
+.is-hidden { display: none !important; }
+
+/* -----------------------------------------------------------------------------
+   3. ヘッダー / ビュー切替
+----------------------------------------------------------------------------- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: 14px clamp(16px, 4vw, 40px);
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--hair);
+}
+
+.app-header__brand { display: flex; align-items: center; gap: 12px; }
+.app-header__mark {
+  display: grid;
+  place-items: center;
+  width: 40px; height: 40px;
+  border-radius: 11px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 20px;
+  box-shadow: var(--sh-1);
+}
+.app-header__titles { display: flex; flex-direction: column; line-height: 1.25; }
+.app-header__name { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+.app-header__sub { font-size: 12.5px; color: var(--ink-mute); }
+
+/* セグメンテッドコントロール風タブ */
+.view-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-sunken);
+  border-radius: 10px;
+}
+.view-tab {
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transition: color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.view-tab:hover { color: var(--ink); }
+.view-tab.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--sh-1);
+}
+
+/* -----------------------------------------------------------------------------
+   4. メイン / ビューコンテナ
+----------------------------------------------------------------------------- */
+.app-main { width: 100%; }
+
+.admin-view {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(20px, 3vw, 36px) clamp(16px, 4vw, 40px) 80px;
+}
+
+.customer-view {
+  display: flex;
+  justify-content: center;
+  padding: clamp(20px, 4vw, 48px) 16px 80px;
+}
+
+/* -----------------------------------------------------------------------------
+   5. 店舗側 — KPI サマリー
+----------------------------------------------------------------------------- */
+.kpi {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+.kpi__card {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  padding: 20px 22px;
+  box-shadow: var(--sh-1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.kpi__card:hover { transform: translateY(-1px); box-shadow: var(--sh-2); }
+.kpi__num {
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.kpi__label { font-size: 13px; color: var(--ink-mute); }
+.kpi__card--alert { background: var(--surface); }
+.kpi__card--alert .kpi__num { color: var(--st-expired); }
+.kpi__card--alert::before {
+  content: "";
+  height: 3px;
+  width: 34px;
+  border-radius: var(--r-pill);
+  background: var(--st-expired);
+  margin-bottom: 2px;
+}
+
+/* -----------------------------------------------------------------------------
+   6. 店舗側 — セクション / カード共通
+----------------------------------------------------------------------------- */
+.adm-section {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  padding: clamp(18px, 2.4vw, 26px);
+  box-shadow: var(--sh-1);
+  margin-bottom: var(--sp-5);
+}
+.adm-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+.adm-section__title,
+.adm-notif-list__title,
+.adm-resv-requests__title,
+.adm-form__title {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.adm-notif-list__title,
+.adm-resv-requests__title { font-size: 15px; margin-bottom: var(--sp-3); }
+
+.adm-empty {
+  color: var(--ink-mute);
+  font-size: 14px;
+  padding: var(--sp-5);
+  text-align: center;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+}
+
+/* -----------------------------------------------------------------------------
+   7. 店舗側 — ボタン
+----------------------------------------------------------------------------- */
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--r-pill);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--bg-sunken);
+  transition: background .15s ease, transform .05s ease, box-shadow .15s ease;
+  white-space: nowrap;
+}
+.adm-btn:hover { background: #e2e2e6; }
+.adm-btn:active { transform: scale(0.98); }
+.adm-btn--primary {
+  color: #fff;
+  background: var(--blue);
+  box-shadow: 0 1px 2px rgba(0, 113, 227, 0.35);
+}
+.adm-btn--primary:hover { background: var(--blue-hover); }
+.adm-btn--primary:active { background: var(--blue-press); }
+.adm-btn--sm { padding: 6px 12px; font-size: 13px; }
+
+/* -----------------------------------------------------------------------------
+   8. 店舗側 — 顧客テーブル
+----------------------------------------------------------------------------- */
+.adm-table-wrap {
+  overflow-x: auto;
+  margin: 0 calc(-1 * var(--sp-2));
+  padding: 0 var(--sp-2);
+  -webkit-overflow-scrolling: touch;
+}
+.adm-table { font-size: 14px; min-width: 720px; }
+.adm-table thead th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  letter-spacing: 0.01em;
+  padding: 0 12px 10px;
+  border-bottom: 1px solid var(--hair-strong);
+  white-space: nowrap;
+}
+.adm-table tbody td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--hair);
+  vertical-align: middle;
+}
+.adm-table tbody tr:last-child td { border-bottom: none; }
+.adm-table tbody tr { transition: background .12s ease; }
+.adm-table tbody tr:hover { background: var(--surface-2); }
+
+.adm-cust-row { display: flex; flex-direction: column; }
+.adm-cust-name { font-weight: 600; }
+.adm-cust-kana { font-size: 11.5px; color: var(--ink-faint); }
+
+.adm-days { font-size: 12px; color: var(--ink-mute); }
+
+/* 車検ステータスバッジ(ピル) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.badge::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.9;
+}
+.badge--expired { color: var(--st-expired); background: var(--st-expired-bg); }
+.badge--within1m { color: var(--st-1m); background: var(--st-1m-bg); }
+.badge--within3m { color: var(--st-3m); background: var(--st-3m-bg); }
+.badge--ok { color: var(--st-ok); background: var(--st-ok-bg); }
+
+/* -----------------------------------------------------------------------------
+   9. 店舗側 — フォーム(顧客登録/編集・通知発行)
+----------------------------------------------------------------------------- */
+.adm-form {
+  background: var(--surface-2);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-4);
+}
+.adm-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-4);
+}
+.adm-field { display: flex; flex-direction: column; gap: 6px; }
+.adm-field--full { grid-column: 1 / -1; }
+.adm-field__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.adm-form__actions {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+  margin-top: var(--sp-4);
+}
+.adm-notif-form { margin-top: var(--sp-2); }
+
+/* -----------------------------------------------------------------------------
+   10. 店舗側 — 予約管理
+----------------------------------------------------------------------------- */
+.adm-resv-requests {
+  background: var(--blue-tint);
+  border-radius: var(--r-lg);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-5);
+}
+.adm-resv-requests__title { color: var(--blue); }
+
+.adm-resv-group { margin-bottom: var(--sp-5); }
+.adm-resv-group:last-child { margin-bottom: 0; }
+.adm-resv-group__date {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding-bottom: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--hair);
+}
+.adm-resv-group__flag { color: var(--st-expired); font-size: 12.5px; font-weight: 600; }
+
+.adm-resv-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--sp-3);
+}
+
+.resv-card {
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  box-shadow: var(--sh-1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.resv-card__time {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.resv-card__name { font-weight: 600; font-size: 14px; }
+.resv-card__work { font-size: 13px; color: var(--ink-mute); }
+.resv-card__meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.resv-card__body { display: flex; flex-direction: column; gap: 4px; }
+.resv-card__action { margin-top: 4px; }
+
+/* 重複(バッティング)警告 */
+.resv-card--conflict {
+  border-color: rgba(255, 59, 48, 0.5);
+  background: linear-gradient(0deg, var(--st-expired-bg), var(--st-expired-bg)), var(--surface);
+  box-shadow: 0 0 0 1px rgba(255, 59, 48, 0.15), var(--sh-1);
+}
+.adm-conflict-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--st-expired);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* source / status の小ピル */
+.adm-src, .adm-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: var(--r-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.adm-src--shop { color: var(--ink-mute); background: var(--bg-sunken); }
+.adm-src--customer { color: var(--blue); background: var(--blue-tint); }
+.adm-status--confirmed { color: var(--st-ok); background: var(--st-ok-bg); }
+.adm-status--requested { color: var(--st-1m); background: var(--st-1m-bg); }
+
+/* -----------------------------------------------------------------------------
+   11. 店舗側 — 通知センター
+----------------------------------------------------------------------------- */
+.adm-notif-list { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-4); }
+.notif {
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.notif__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.notif__to { font-weight: 600; font-size: 14px; }
+.notif__cat {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue);
+  background: var(--blue-tint);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+}
+.notif__time { margin-left: auto; font-size: 12px; color: var(--ink-faint); }
+.notif__title { font-weight: 600; font-size: 14.5px; }
+.notif__body { font-size: 13.5px; color: var(--ink-2); }
+.notif__linenote {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+}
+.notif__linenote::before { content: "🟢"; font-size: 9px; }
+
+/* -----------------------------------------------------------------------------
+   12. トースト
+----------------------------------------------------------------------------- */
+.adm-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 16px);
+  background: rgba(0, 0, 0, 0.86);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--r-pill);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--sh-3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  z-index: 100;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.adm-toast--show { opacity: 1; transform: translate(-50%, 0); }
+
+/* -----------------------------------------------------------------------------
+   13. お客様側 — スマホ端末モック
+----------------------------------------------------------------------------- */
+.phone {
+  position: relative;
+  width: 380px;
+  max-width: 100%;
+  background: #1d1d1f;
+  border-radius: 46px;
+  padding: 12px;
+  box-shadow: var(--sh-3), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+.phone__notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 26px;
+  background: #1d1d1f;
+  border-radius: 0 0 16px 16px;
+  z-index: 3;
+}
+.phone__screen {
+  position: relative;
+  background: var(--line-screen);
+  border-radius: 36px;
+  overflow: hidden;
+  height: 720px;
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* デモ用お客様切替 */
+.cust-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--hair);
+}
+.cust-switch__label { font-size: 11.5px; color: var(--ink-mute); white-space: nowrap; }
+.cust-switch__select { padding: 7px 30px 7px 10px; font-size: 13px; border-radius: var(--r-xs); }
+
+/* -----------------------------------------------------------------------------
+   14. お客様側 — LINE トーク
+----------------------------------------------------------------------------- */
+.talk__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--line-header);
+  color: #fff;
+}
+.talk__avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.talk__headtext { display: flex; flex-direction: column; line-height: 1.2; }
+.talk__shopname { font-weight: 600; font-size: 15px; }
+.talk__official {
+  font-size: 11px;
+  opacity: 0.9;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.talk {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.talk__daysep {
+  align-self: center;
+  margin: 10px 0;
+  padding: 3px 12px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.10);
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 11px;
+  font-weight: 600;
+}
+.talk__msg { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+
+.talk__bubble {
+  position: relative;
+  max-width: 82%;
+  padding: 10px 13px;
+  font-size: 14px;
+  line-height: 1.5;
+  border-radius: 4px 16px 16px 16px;
+}
+.talk__bubble--in {
+  align-self: flex-start;
+  background: var(--line-bubble);
+  color: var(--ink);
+  box-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.10);
+}
+.talk__cat {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--line-header);
+  margin-bottom: 3px;
+}
+.talk__title { display: block; font-weight: 600; margin-bottom: 2px; }
+.talk__body { display: block; color: var(--ink-2); }
+.talk__time {
+  align-self: flex-start;
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  margin-left: 4px;
+}
+.talk__linenote {
+  align-self: flex-start;
+  max-width: 82%;
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  margin: 1px 0 2px 4px;
+}
+.talk__empty {
+  margin: auto;
+  color: var(--ink-mute);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* -----------------------------------------------------------------------------
+   15. お客様側 — 予約リクエストフォーム
+----------------------------------------------------------------------------- */
+.req-form {
+  background: var(--surface);
+  border-top: 1px solid var(--hair);
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+  max-height: 46%;
+  overflow-y: auto;
+}
+.req-form__title { font-size: 14px; font-weight: 600; }
+.req-form__hint { font-size: 11.5px; color: var(--ink-mute); margin-top: -4px; }
+.req-form__label { font-size: 12px; font-weight: 600; color: var(--ink-2); display: block; margin-bottom: 4px; }
+.req-form__input, .req-form__textarea { font-size: 14px; }
+.req-form__textarea { min-height: 56px; }
+.req-form__submit {
+  margin-top: 2px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--line-send);
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  transition: filter .15s ease, transform .05s ease;
+}
+.req-form__submit:hover { filter: brightness(1.05); }
+.req-form__submit:active { transform: scale(0.99); }
+.req-form__done {
+  background: var(--st-ok-bg);
+  color: var(--st-ok);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  padding: 12px;
+  border-radius: var(--r-md);
+  line-height: 1.5;
+}
+
+/* -----------------------------------------------------------------------------
+   16. レスポンシブ
+----------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .kpi { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 720px) {
+  body { font-size: 14.5px; }
+  .app-header {
+    justify-content: center;
+    text-align: center;
+    padding: 12px 16px;
+  }
+  .view-tabs { width: 100%; justify-content: center; }
+  .view-tab { flex: 1; text-align: center; padding: 8px 10px; }
+  .adm-form__grid { grid-template-columns: 1fr; }
+  .adm-resv-list { grid-template-columns: 1fr; }
+  .adm-form__actions { flex-direction: column-reverse; }
+  .adm-form__actions .adm-btn { width: 100%; }
+  .adm-section__head .adm-btn { width: 100%; }
+}
+
+@media (max-width: 440px) {
+  .kpi { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi__card { padding: 16px; }
+  .kpi__num { font-size: 28px; }
+  .phone { border-radius: 38px; padding: 8px; }
+  .phone__screen { border-radius: 30px; max-height: 74vh; }
+}
+
+/* タッチ端末ではホバーの見た目を無効化 */
+@media (hover: none) {
+  .kpi__card:hover { transform: none; box-shadow: var(--sh-1); }
+  .adm-table tbody tr:hover { background: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

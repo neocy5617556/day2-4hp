@@ -1,0 +1,48 @@
+<!--
+  サカイオートサービス — 顧客管理・予約・車検リマインド デモ
+  静的SPA（ビルド無し / Vanilla JS / localStorage 永続化）
+  読込順が重要: data.js → notifications.js → admin.js → customer.js → app.js
+-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#12161c" />
+<title>サカイオートサービス｜顧客管理・車検リマインド</title>
+<link rel="stylesheet" href="styles.css" />
+
+<!-- アプリ骨格。中身は各ビューの render() が描画する -->
+<header class="app-header">
+  <div class="app-header__brand">
+    <span class="app-header__mark" aria-hidden="true">🔧</span>
+    <div class="app-header__titles">
+      <div class="app-header__name">サカイオートサービス</div>
+      <div class="app-header__sub">顧客管理・予約・車検リマインド</div>
+    </div>
+  </div>
+
+  <nav class="view-tabs" role="tablist" aria-label="表示切替">
+    <button class="view-tab is-active" data-view="admin" role="tab" type="button">
+      🖥 店舗側（管理画面）
+    </button>
+    <button class="view-tab" data-view="customer" role="tab" type="button">
+      📱 お客様側（スマホ）
+    </button>
+  </nav>
+</header>
+
+<main class="app-main">
+  <!-- 店舗側 管理画面 -->
+  <section class="admin-view" id="admin-view">
+    <div id="admin-root"></div>
+  </section>
+
+  <!-- お客様側 スマホ画面 -->
+  <section class="customer-view is-hidden" id="customer-view">
+    <div id="customer-root"></div>
+  </section>
+</main>
+
+<script src="data.js"></script>
+<script src="notifications.js"></script>
+<script src="admin.js"></script>
+<script src="customer.js"></script>
+<script src="app.js"></script>
