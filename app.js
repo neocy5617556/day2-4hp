@@ -24,14 +24,16 @@
   // 起動: 状態の復元 or 初期デモデータ生成
   // ------------------------------------------------------------
   App.boot = function () {
-    var loaded = Store.load();
-    if (loaded) {
-      App.state = loaded;
-    } else {
-      // 初回のみ: seed で生成した初期データを保存（seed 自体は保存しない仕様）
-      App.state = Store.seed();
-      Store.save(App.state);
-    }
+    // 営業配布用デモ: 永続化しない。開く（リロードする）たびに必ず初期デモデータから開始する。
+    // これにより、ある訪問者がデモ中に入力・編集した内容が次の訪問者に残らない。
+    // 過去バージョンで保存された可能性のあるデータも念のため消しておく。
+    try {
+      window.localStorage.removeItem(Store.KEY);
+      window.localStorage.removeItem('sakai_auto_state_v1');
+      window.localStorage.removeItem('sakai_auto_state_v2');
+    } catch (e) { /* localStorage 不可環境でも動くよう握りつぶす */ }
+
+    App.state = Store.seed(); // 常に初期状態を生成（保存はしない）
 
     // 後方互換: 想定キーが欠けていても落ちないよう最低限を補完
     App.state.customers = App.state.customers || [];

@@ -123,24 +123,16 @@
 
   Store.KEY = 'sakai_auto_state_v3';
 
-  // localStorage から読込（無い / パース失敗時は null）
+  // 読込: 営業配布用デモでは永続化しないため常に null（＝毎回 seed から開始）。
   Store.load = function () {
-    try {
-      var raw = window.localStorage.getItem(Store.KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch (e) {
-      return null;
-    }
+    return null;
   };
 
-  // localStorage へ保存
+  // 保存: 営業配布用デモでは永続化しない（no-op）。
+  // 操作は App.state（メモリ上）のみで完結し、リロードで初期状態へ戻る。
+  // 共有DBや localStorage に書き込まないため、他の閲覧者に内容が見えることはない。
   Store.save = function (state) {
-    try {
-      window.localStorage.setItem(Store.KEY, JSON.stringify(state));
-    } catch (e) {
-      // 容量超過等は握りつぶす（デモ用）
-    }
+    /* 意図的に何もしない（永続化なし） */
   };
 
   // 初期stateを新規生成して返す（保存はしない）
