@@ -321,5 +321,13 @@
     input.addEventListener('keyup', onSearch);
   }
 
-  window.AdminCustomers = { render: render };
+  // 外部（サイドバー等）から新規登録フォームを開く入口。
+  function openNew() {
+    formMode = 'new';
+    editingId = null;
+    if (window.AdminUI) window.AdminUI.go('customers'); // 顧客セクションへ遷移＋再描画
+    else render();
+  }
+
+  window.AdminCustomers = { render: render, openNew: openNew };
 })();

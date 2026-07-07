@@ -115,7 +115,7 @@
   // ============================================================
   var Store = {};
 
-  Store.KEY = 'sakai_auto_state_v1';
+  Store.KEY = 'sakai_auto_state_v2';
 
   // localStorage から読込（無い / パース失敗時は null）
   Store.load = function () {
@@ -184,6 +184,37 @@
     var dupDate = ymd(3);
     var dupTime = '10:00';
     var reservations = [
+      // --- 本日の予約（サイドバー「本日のスケジュール」用） ---
+      {
+        id: Utils.uid('resv'),
+        customerId: customers[1].id,
+        date: ymd(0),
+        time: '09:00',
+        workType: '車検整備',
+        source: 'shop',
+        status: 'confirmed',
+        createdAt: pastIso(2)
+      },
+      {
+        id: Utils.uid('resv'),
+        customerId: customers[3].id,
+        date: ymd(0),
+        time: '11:00',
+        workType: 'オイル交換',
+        source: 'shop',
+        status: 'confirmed',
+        createdAt: pastIso(1)
+      },
+      {
+        id: Utils.uid('resv'),
+        customerId: customers[6].id,
+        date: ymd(0),
+        time: '15:00',
+        workType: '12ヶ月点検',
+        source: 'shop',
+        status: 'confirmed',
+        createdAt: pastIso(1)
+      },
       {
         id: Utils.uid('resv'),
         customerId: customers[0].id,
